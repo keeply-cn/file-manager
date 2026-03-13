@@ -40,5 +40,6 @@ func main() {
 }
 
 func run(cfg *Config) error {
-	return nil
+	srv := newServer(cfg)
+	return srv.Start()
 }
