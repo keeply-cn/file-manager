@@ -7,9 +7,11 @@ import (
 )
 
 type Server struct {
-	cfg    *Config
-	mux    *http.ServeMux
-	server *http.Server
+	cfg          *Config
+	mux          *http.ServeMux
+	server       *http.Server
+	authHandler  interface{}
+	fileHandler  interface{}
 }
 
 func newServer(cfg *Config) *Server {
@@ -17,6 +19,7 @@ func newServer(cfg *Config) *Server {
 		cfg: cfg,
 		mux: http.NewServeMux(),
 	}
+	s.setupRoutes()
 
 	s.server = &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
