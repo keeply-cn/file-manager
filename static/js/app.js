@@ -66,63 +66,26 @@
         return modeMap[ext] || 'text/plain';
     }
 
-    let editorLoaded = false;
-    let editorLoading = false;
+    let editorPreloaded = false;
 
-    function loadEditor() {
-        return new Promise((resolve, reject) => {
-            if (editorLoaded) {
-                resolve();
-                return;
-            }
-            if (editorLoading) {
-                const checkLoaded = setInterval(() => {
-                    if (editorLoaded) {
-                        clearInterval(checkLoaded);
-                        resolve();
-                    }
-                }, 100);
-                return;
-            }
-            
-            editorLoading = true;
-            const loader = document.getElementById('editor-loader');
-            loader.classList.remove('hidden');
-            
-            const cssUrl = 'https://cdn.jsdelivr.net/npm/codemirror@5/lib/codemirror.min.css';
-            const jsUrl = 'https://cdn.jsdelivr.net/npm/codemirror@5/lib/codemirror.min.js';
-            
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = cssUrl;
-            document.head.appendChild(link);
-            
-            const script = document.createElement('script');
-            script.src = jsUrl;
-            script.onload = () => {
-                editorLoaded = true;
-                editorLoading = false;
-                loader.classList.add('hidden');
-                resolve();
-            };
-            script.onerror = () => {
-                editorLoading = false;
-                loader.classList.add('hidden');
-                reject(new Error('Failed to load editor'));
-            };
-            document.head.appendChild(script);
-        });
+    function preloadEditor() {
+        if (editorPreloaded || typeof CodeMirror === 'undefined') return;
+        editorPreloaded = true;
     }
 
     function initEditor(content, path, readonly) {
-        const textarea = document.getElementById('editor');
+        if (!editorPreloaded) {
+            preloadEditor();
+        }
         
         if (editorInstance) {
             editorInstance.toTextArea();
             editorInstance = null;
         }
         
+        const textarea = document.getElementById('editor');
         textarea.style.display = 'block';
+        textarea.value = content || '';
         
         const mode = getModeFromPath(path);
         
@@ -201,6 +164,8 @@
                 if (data.code === 0) {
                     showFilePage();
                     loadFiles(currentPath);
+                    // 预加载编辑器
+                    setTimeout(preloadEditor, 100);
                 } else {
                     alert(data.msg || '登录失败');
                 }
@@ -328,39 +293,31 @@
     }
 
     function viewFile(path) {
-        loadEditor().then(() => {
-            fetch(api('/api/read?path=' + encodeURIComponent(path)))
-                .then(r => r.json())
-                .then(data => {
-                    if (data.code === 0) {
-                        const modal = document.getElementById('edit-modal');
-                        initEditor(data.data, path, true);
-                        document.getElementById('btn-save-edit').classList.add('hidden');
-                        modal.classList.remove('hidden');
-                    }
-                });
-        }).catch(() => {
-            alert('编辑器加载失败');
-        });
+        fetch(api('/api/read?path=' + encodeURIComponent(path)))
+            .then(r => r.json())
+            .then(data => {
+                if (data.code === 0) {
+                    const modal = document.getElementById('edit-modal');
+                    initEditor(data.data, path, true);
+                    document.getElementById('btn-save-edit').classList.add('hidden');
+                    modal.classList.remove('hidden');
+                }
+            });
     }
 
     function editFile(path) {
-        loadEditor().then(() => {
-            fetch(api('/api/read?path=' + encodeURIComponent(path)))
-                .then(r => r.json())
-                .then(data => {
-                    if (data.code === 0) {
-                        const modal = document.getElementById('edit-modal');
-                        currentEditPath = path;
-                        initEditor(data.data, path, false);
-                        document.getElementById('btn-save-edit').classList.remove('hidden');
-                        document.getElementById('btn-save-edit').onclick = () => saveFile(path);
-                        modal.classList.remove('hidden');
-                    }
-                });
-        }).catch(() => {
-            alert('编辑器加载失败');
-        });
+        fetch(api('/api/read?path=' + encodeURIComponent(path)))
+            .then(r => r.json())
+            .then(data => {
+                if (data.code === 0) {
+                    const modal = document.getElementById('edit-modal');
+                    currentEditPath = path;
+                    initEditor(data.data, path, false);
+                    document.getElementById('btn-save-edit').classList.remove('hidden');
+                    document.getElementById('btn-save-edit').onclick = () => saveFile(path);
+                    modal.classList.remove('hidden');
+                }
+            });
     }
 
     function saveFile(path) {
