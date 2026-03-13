@@ -1,0 +1,29 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+file-manager
+
+# Go workspace
+go.work
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# opencode
+.opencode/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Build
+static/lib/
+static/codemirror/
