@@ -6,23 +6,31 @@ import (
 )
 
 func (s *Server) setupRoutes() {
-	// Use a catch-all handler that routes to specific handlers
 	s.mux.HandleFunc("/", s.handleRequest)
 }
 
 func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	
-	// Check if path starts with basePath
-	basePath := s.cfg.basePath
-	if basePath == "/" {
-		basePath = ""
+	// basePath 用于 API 和静态资源路径匹配（去除外部路径前缀）
+	// 但路由始终注册在 "/" 上，由端口转发处理外部路径
+	externalBasePath := s.cfg.basePath
+	if externalBasePath == "/" {
+		externalBasePath = ""
 	}
 	
-	// API routes
-	apiPrefix := basePath + "/api/"
-	if strings.HasPrefix(path, apiPrefix) {
-		apiPath := strings.TrimPrefix(path, apiPrefix)
+	// 去除外部 basepath 前缀，得到内部路径
+	internalPath := path
+	if externalBasePath != "" && strings.HasPrefix(path, externalBasePath) {
+		internalPath = strings.TrimPrefix(path, externalBasePath)
+		if !strings.HasPrefix(internalPath, "/") {
+			internalPath = "/" + internalPath
+		}
+	}
+	
+	// API routes - 匹配内部路径 /api/*
+	if strings.HasPrefix(internalPath, "/api/") {
+		apiPath := strings.TrimPrefix(internalPath, "/api/")
 		switch apiPath {
 		case "login":
 			s.handleLogin(w, r)
@@ -56,15 +64,14 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	// Static files
-	staticPrefix := basePath + "/static/"
-	if strings.HasPrefix(path, staticPrefix) {
-		s.handleStatic(w, r)
+	// Static files - 匹配内部路径 /static/*
+	if strings.HasPrefix(internalPath, "/static/") {
+		s.handleStatic(w, r, internalPath)
 		return
 	}
 	
-	// Index page
-	if path == s.cfg.basePath || path == s.cfg.basePath+"/" || (s.cfg.basePath == "/" && path == "/") {
+	// Index page - 匹配内部路径 / 或空
+	if internalPath == "/" || internalPath == "" {
 		s.handleIndex(w, r)
 		return
 	}
@@ -87,9 +94,9 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(content))
 }
 
-func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, s.cfg.basePath)
-	path = strings.TrimPrefix(path, "/static/")
+func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request, internalPath string) {
+	// internalPath is like /static/xxx, extract xxx
+	path := strings.TrimPrefix(internalPath, "/static/")
 	if path == "" {
 		path = "index.html"
 	}
