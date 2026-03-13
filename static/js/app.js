@@ -1,10 +1,13 @@
 (function() {
     const getBasePath = function() {
         const path = window.location.pathname;
-        const parts = path.split('/');
-        parts.pop();
-        if (parts[parts.length - 1] === '') parts.pop();
-        return parts.join('/') || '/';
+        // 移除末尾的斜杠，但保留开头和中间的
+        let basePath = path.endsWith('/') ? path.slice(0, -1) : path;
+        // 确保以 / 开头
+        if (!basePath.startsWith('/')) {
+            basePath = '/' + basePath;
+        }
+        return basePath;
     };
 
     const basePath = getBasePath();
