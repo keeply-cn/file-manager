@@ -241,3 +241,19 @@ tr:hover {
 .modal-actions button.primary:hover {
     background: #0056b3;
 }
+
+#editor-container {
+    flex: 1;
+    min-height: 300px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+#editor-container .CodeMirror {
+    height: 100%;
+    min-height: 300px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}

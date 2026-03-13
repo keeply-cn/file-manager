@@ -26,6 +26,89 @@
     const fileInput = document.getElementById('file-input');
     const dropZone = document.getElementById('drop-zone');
 
+    let editorInstance = null;
+    let currentEditPath = '';
+
+    function getModeFromPath(path) {
+        if (!path) return 'text/plain';
+        const ext = path.split('.').pop().toLowerCase();
+        const modeMap = {
+            'js': 'javascript',
+            'jsx': 'javascript',
+            'ts': 'javascript',
+            'tsx': 'javascript',
+            'json': 'javascript',
+            'css': 'css',
+            'scss': 'css',
+            'less': 'css',
+            'html': 'htmlmixed',
+            'htm': 'htmlmixed',
+            'xml': 'xml',
+            'py': 'python',
+            'md': 'markdown',
+            'markdown': 'markdown',
+            'go': 'go',
+            'java': 'text/plain',
+            'c': 'text/plain',
+            'cpp': 'text/plain',
+            'h': 'text/plain',
+            'sh': 'shell',
+            'bash': 'shell',
+            'yaml': 'yaml',
+            'yml': 'yaml',
+            'sql': 'sql',
+            'php': 'php',
+            'rb': 'ruby',
+            'rs': 'rust',
+            'vue': 'htmlmixed',
+            'svelte': 'htmlmixed'
+        };
+        return modeMap[ext] || 'text/plain';
+    }
+
+    function initEditor(content, path, readonly) {
+        const textarea = document.getElementById('editor');
+        
+        if (editorInstance) {
+            editorInstance.toTextArea();
+            editorInstance = null;
+        }
+        
+        textarea.style.display = 'block';
+        
+        const mode = getModeFromPath(path);
+        
+        editorInstance = CodeMirror.fromTextArea(textarea, {
+            mode: mode,
+            theme: 'default',
+            lineNumbers: true,
+            lineWrapping: true,
+            indentWithTabs: true,
+            indentUnit: 4,
+            tabSize: 4,
+            readOnly: readonly,
+            autofocus: true,
+            extraKeys: {
+                'Ctrl-S': function() {
+                    if (!readonly && currentEditPath) {
+                        saveFile(currentEditPath);
+                    }
+                },
+                'Cmd-S': function() {
+                    if (!readonly && currentEditPath) {
+                        saveFile(currentEditPath);
+                    }
+                }
+            }
+        });
+        
+        editorInstance.setValue(content || '');
+    }
+
+    function getEditorContent() {
+        return editorInstance ? editorInstance.getValue() : '';
+    }
+
     function init() {
         checkAuth();
         bindEvents();
@@ -168,13 +251,13 @@
         breadcrumb.innerHTML = '';
         const parts = path.split('/').filter(p => p);
         
-        let accPath = '';
         const rootSpan = document.createElement('span');
         rootSpan.className = 'path-item';
         rootSpan.textContent = '根目录';
         rootSpan.addEventListener('click', () => loadFiles('/'));
         breadcrumb.appendChild(rootSpan);
 
+        let accPath = '';
         parts.forEach(part => {
             accPath += '/' + part;
             const sep = document.createElement('span');
@@ -184,7 +267,8 @@
             const span = document.createElement('span');
             span.className = 'path-item';
             span.textContent = part;
-            span.addEventListener('click', () => loadFiles(accPath));
+            const clickPath = accPath;  // Capture current value
+            span.addEventListener('click', () => loadFiles(clickPath));
             breadcrumb.appendChild(span);
         });
     }
@@ -201,8 +285,7 @@
             .then(data => {
                 if (data.code === 0) {
                     const modal = document.getElementById('edit-modal');
-                    document.getElementById('editor').value = data.data;
-                    document.getElementById('editor').readOnly = true;
+                    initEditor(data.data, path, true);
                     document.getElementById('btn-save-edit').classList.add('hidden');
                     modal.classList.remove('hidden');
                 }
@@ -210,15 +293,13 @@
     }
 
     function editFile(path) {
-        let fileContent = '';
         fetch(api('/api/read?path=' + encodeURIComponent(path)))
             .then(r => r.json())
             .then(data => {
                 if (data.code === 0) {
-                    fileContent = data.data;
                     const modal = document.getElementById('edit-modal');
-                    document.getElementById('editor').value = fileContent;
-                    document.getElementById('editor').readOnly = false;
+                    currentEditPath = path;
+                    initEditor(data.data, path, false);
                     document.getElementById('btn-save-edit').classList.remove('hidden');
                     document.getElementById('btn-save-edit').onclick = () => saveFile(path);
                     modal.classList.remove('hidden');
@@ -227,7 +308,7 @@
     }
 
     function saveFile(path) {
-        const content = document.getElementById('editor').value;
+        const content = getEditorContent();
         fetch(api('/api/write'), {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -237,6 +318,11 @@
         .then(data => {
             if (data.code === 0) {
                 document.getElementById('edit-modal').classList.add('hidden');
+                if (editorInstance) {
+                    editorInstance.toTextArea();
+                    editorInstance = null;
+                }
+                currentEditPath = '';
                 loadFiles(currentPath);
             } else {
                 alert(data.msg);
@@ -392,6 +478,11 @@
 
     document.getElementById('btn-cancel-edit').addEventListener('click', () => {
         document.getElementById('edit-modal').classList.add('hidden');
+        if (editorInstance) {
+            editorInstance.toTextArea();
+            editorInstance = null;
+        }
+        currentEditPath = '';
     });
 
     function logout() {

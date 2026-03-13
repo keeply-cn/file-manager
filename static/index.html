@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文件管理器</title>
     <link rel="stylesheet" href="{{basePath}}/static/css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5/lib/codemirror.min.css">
 </head>
 <body>
     <div id="app">
@@ -53,7 +54,9 @@
         <div id="edit-modal" class="modal hidden">
             <div class="modal-content">
                 <h3>编辑文件</h3>
-                <textarea id="editor"></textarea>
+                <div id="editor-container">
+                    <textarea id="editor"></textarea>
+                </div>
                 <div class="modal-actions">
                     <button id="btn-save-edit">保存</button>
                     <button id="btn-cancel-edit">取消</button>
@@ -96,6 +99,14 @@
 
     <input type="file" id="file-input" multiple style="display: none;">
     
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/lib/codemirror.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/javascript/javascript.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/css/css.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/xml/xml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/python/python.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/go/go.js"></script>
     <script src="{{basePath}}/static/js/app.js"></script>
 </body>
 </html>
