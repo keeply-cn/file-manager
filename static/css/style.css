@@ -249,12 +249,22 @@ tr:hover {
     border: 1px solid #ddd;
     border-radius: 4px;
     overflow: auto;
+    background: #fafafa;
 }
 
-#editor-container .CodeMirror {
-    height: auto;
+#editor-container textarea {
+    width: 100%;
     min-height: 300px;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    height: 100%;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    tab-size: 4;
+    -moz-tab-size: 4;
+}
 }

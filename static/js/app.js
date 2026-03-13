@@ -1,9 +1,7 @@
 (function() {
     const getBasePath = function() {
         const path = window.location.pathname;
-        // 移除末尾的斜杠，但保留开头和中间的
         let basePath = path.endsWith('/') ? path.slice(0, -1) : path;
-        // 确保以 / 开头
         if (!basePath.startsWith('/')) {
             basePath = '/' + basePath;
         }
@@ -16,7 +14,6 @@
     };
 
     let currentPath = '/';
-    let selectedFiles = [];
 
     const loginPage = document.getElementById('login-page');
     const filePage = document.getElementById('file-page');
@@ -26,99 +23,7 @@
     const fileInput = document.getElementById('file-input');
     const dropZone = document.getElementById('drop-zone');
 
-    let editorInstance = null;
     let currentEditPath = '';
-
-    function getModeFromPath(path) {
-        if (!path) return 'text/plain';
-        const ext = path.split('.').pop().toLowerCase();
-        const modeMap = {
-            'js': 'javascript',
-            'jsx': 'javascript',
-            'ts': 'javascript',
-            'tsx': 'javascript',
-            'json': 'javascript',
-            'css': 'css',
-            'scss': 'css',
-            'less': 'css',
-            'html': 'htmlmixed',
-            'htm': 'htmlmixed',
-            'xml': 'xml',
-            'py': 'python',
-            'md': 'markdown',
-            'markdown': 'markdown',
-            'go': 'go',
-            'java': 'text/plain',
-            'c': 'text/plain',
-            'cpp': 'text/plain',
-            'h': 'text/plain',
-            'sh': 'shell',
-            'bash': 'shell',
-            'yaml': 'yaml',
-            'yml': 'yaml',
-            'sql': 'sql',
-            'php': 'php',
-            'rb': 'ruby',
-            'rs': 'rust',
-            'vue': 'htmlmixed',
-            'svelte': 'htmlmixed'
-        };
-        return modeMap[ext] || 'text/plain';
-    }
-
-    let editorPreloaded = false;
-
-    function preloadEditor() {
-        if (editorPreloaded || typeof CodeMirror === 'undefined') return;
-        editorPreloaded = true;
-    }
-
-    function initEditor(content, path, readonly) {
-        if (!editorPreloaded) {
-            preloadEditor();
-        }
-        
-        if (editorInstance) {
-            editorInstance.toTextArea();
-            editorInstance = null;
-        }
-        
-        const textarea = document.getElementById('editor');
-        textarea.style.display = 'block';
-        textarea.value = content || '';
-        
-        const mode = getModeFromPath(path);
-        
-        editorInstance = CodeMirror.fromTextArea(textarea, {
-            mode: mode,
-            theme: 'default',
-            lineNumbers: true,
-            lineWrapping: true,
-            indentWithTabs: true,
-            indentUnit: 4,
-            tabSize: 4,
-            readOnly: readonly,
-            autofocus: true,
-            extraKeys: {
-                'Ctrl-S': function() {
-                    if (!readonly && currentEditPath) {
-                        saveFile(currentEditPath);
-                    }
-                },
-                'Cmd-S': function() {
-                    if (!readonly && currentEditPath) {
-                        saveFile(currentEditPath);
-                    }
-                }
-            }
-        });
-        
-        editorInstance.setValue(content || '');
-    }
-
-    function getEditorContent() {
-        return editorInstance ? editorInstance.getValue() : '';
-    }
 
     function init() {
         checkAuth();
@@ -164,8 +69,6 @@
                 if (data.code === 0) {
                     showFilePage();
                     loadFiles(currentPath);
-                    // 预加载编辑器
-                    setTimeout(preloadEditor, 100);
                 } else {
                     alert(data.msg || '登录失败');
                 }
@@ -199,7 +102,10 @@
         document.getElementById('check-all').addEventListener('change', function() {
             const checks = document.querySelectorAll('.file-check');
             checks.forEach(c => c.checked = this.checked);
-            updateSelectedFiles();
+        });
+
+        document.getElementById('btn-cancel-edit').addEventListener('click', () => {
+            document.getElementById('edit-modal').classList.add('hidden');
         });
     }
 
@@ -217,6 +123,11 @@
 
     function renderFileList(files) {
         fileList.innerHTML = '';
+        
+        if (!files || files.length === 0) {
+            fileList.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">文件夹为空</td></tr>';
+            return;
+        }
         
         files.forEach(file => {
             const tr = document.createElement('tr');
@@ -280,7 +191,7 @@
             const span = document.createElement('span');
             span.className = 'path-item';
             span.textContent = part;
-            const clickPath = accPath;  // Capture current value
+            const clickPath = accPath;
             span.addEventListener('click', () => loadFiles(clickPath));
             breadcrumb.appendChild(span);
         });
@@ -298,7 +209,9 @@
             .then(data => {
                 if (data.code === 0) {
                     const modal = document.getElementById('edit-modal');
-                    initEditor(data.data, path, true);
+                    const textarea = document.getElementById('editor');
+                    textarea.value = data.data;
+                    textarea.readOnly = true;
                     document.getElementById('btn-save-edit').classList.add('hidden');
                     modal.classList.remove('hidden');
                 }
@@ -311,8 +224,10 @@
             .then(data => {
                 if (data.code === 0) {
                     const modal = document.getElementById('edit-modal');
+                    const textarea = document.getElementById('editor');
                     currentEditPath = path;
-                    initEditor(data.data, path, false);
+                    textarea.value = data.data;
+                    textarea.readOnly = false;
                     document.getElementById('btn-save-edit').classList.remove('hidden');
                     document.getElementById('btn-save-edit').onclick = () => saveFile(path);
                     modal.classList.remove('hidden');
@@ -321,7 +236,7 @@
     }
 
     function saveFile(path) {
-        const content = getEditorContent();
+        const content = document.getElementById('editor').value;
         fetch(api('/api/write'), {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -331,10 +246,6 @@
         .then(data => {
             if (data.code === 0) {
                 document.getElementById('edit-modal').classList.add('hidden');
-                if (editorInstance) {
-                    editorInstance.toTextArea();
-                    editorInstance = null;
-                }
                 currentEditPath = '';
                 loadFiles(currentPath);
             } else {
@@ -489,24 +400,11 @@
         });
     }
 
-    document.getElementById('btn-cancel-edit').addEventListener('click', () => {
-        document.getElementById('edit-modal').classList.add('hidden');
-        if (editorInstance) {
-            editorInstance.toTextArea();
-            editorInstance = null;
-        }
-        currentEditPath = '';
-    });
-
     function logout() {
         fetch(api('/api/logout'), {method: 'POST'})
             .then(() => {
                 showLoginPage();
             });
-    }
-
-    function updateSelectedFiles() {
-        selectedFiles = Array.from(document.querySelectorAll('.file-check:checked')).map(c => c.dataset.path);
     }
 
     init();
