@@ -70,7 +70,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	h.sessions[sessionID] = &Session{
 		ID:        sessionID,
-		ExpiresAt: time.Now().Add(24 * time.Hours),
+		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
 	h.mu.Unlock()
 

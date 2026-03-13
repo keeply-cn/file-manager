@@ -6,24 +6,70 @@ import (
 )
 
 func (s *Server) setupRoutes() {
-	s.mux.HandleFunc(s.cfg.basePath, s.handleIndex)
-	s.mux.HandleFunc(s.cfg.basePath+"/", s.handleIndex)
-	s.mux.HandleFunc(s.cfg.basePath+"/static/", s.handleStatic)
+	// Use a catch-all handler that routes to specific handlers
+	s.mux.HandleFunc("/", s.handleRequest)
+}
+
+func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
 	
-	apiPath := s.cfg.basePath + "api/"
-	s.mux.HandleFunc(apiPath+"login", s.handleLogin)
-	s.mux.HandleFunc(apiPath+"logout", s.handleLogout)
-	s.mux.HandleFunc(apiPath+"check", s.handleCheck)
-	s.mux.HandleFunc(apiPath+"list", s.handleList)
-	s.mux.HandleFunc(apiPath+"read", s.handleRead)
-	s.mux.HandleFunc(apiPath+"upload", s.handleUpload)
-	s.mux.HandleFunc(apiPath+"download", s.handleDownload)
-	s.mux.HandleFunc(apiPath+"create", s.handleCreate)
-	s.mux.HandleFunc(apiPath+"rename", s.handleRename)
-	s.mux.HandleFunc(apiPath+"copy", s.handleCopy)
-	s.mux.HandleFunc(apiPath+"move", s.handleMove)
-	s.mux.HandleFunc(apiPath+"delete", s.handleDelete)
-	s.mux.HandleFunc(apiPath+"write", s.handleWrite)
+	// Check if path starts with basePath
+	basePath := s.cfg.basePath
+	if basePath == "/" {
+		basePath = ""
+	}
+	
+	// API routes
+	apiPrefix := basePath + "/api/"
+	if strings.HasPrefix(path, apiPrefix) {
+		apiPath := strings.TrimPrefix(path, apiPrefix)
+		switch apiPath {
+		case "login":
+			s.handleLogin(w, r)
+		case "logout":
+			s.handleLogout(w, r)
+		case "check":
+			s.handleCheck(w, r)
+		case "list":
+			s.handleList(w, r)
+		case "read":
+			s.handleRead(w, r)
+		case "upload":
+			s.handleUpload(w, r)
+		case "download":
+			s.handleDownload(w, r)
+		case "create":
+			s.handleCreate(w, r)
+		case "rename":
+			s.handleRename(w, r)
+		case "copy":
+			s.handleCopy(w, r)
+		case "move":
+			s.handleMove(w, r)
+		case "delete":
+			s.handleDelete(w, r)
+		case "write":
+			s.handleWrite(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+		return
+	}
+	
+	// Static files
+	staticPrefix := basePath + "/static/"
+	if strings.HasPrefix(path, staticPrefix) {
+		s.handleStatic(w, r)
+		return
+	}
+	
+	// Index page
+	if path == s.cfg.basePath || path == s.cfg.basePath+"/" || (s.cfg.basePath == "/" && path == "/") {
+		s.handleIndex(w, r)
+		return
+	}
+	
+	http.NotFound(w, r)
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +78,11 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	content := strings.Replace(string(data), "{{basePath}}", s.cfg.basePath, -1)
+	basePath := s.cfg.basePath
+	if basePath == "/" {
+		basePath = ""
+	}
+	content := strings.Replace(string(data), "{{basePath}}", basePath, -1)
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(content))
 }

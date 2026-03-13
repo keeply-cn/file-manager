@@ -4,7 +4,6 @@ import (
 	"embed"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"file-manager/handlers"
