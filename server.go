@@ -4,20 +4,24 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"file-manager/handlers"
 )
 
 type Server struct {
 	cfg          *Config
 	mux          *http.ServeMux
 	server       *http.Server
-	authHandler  interface{}
-	fileHandler  interface{}
+	authHandler  *handlers.AuthHandler
+	fileHandler  *handlers.FileHandler
 }
 
 func newServer(cfg *Config) *Server {
 	s := &Server{
-		cfg: cfg,
-		mux: http.NewServeMux(),
+		cfg:          cfg,
+		mux:          http.NewServeMux(),
+		authHandler:  handlers.NewAuthHandler(cfg.password, cfg.basePath),
+		fileHandler:  handlers.NewFileHandler(cfg.root),
 	}
 	s.setupRoutes()
 
