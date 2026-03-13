@@ -1,12 +1,17 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"file-manager/handlers"
 )
+
+//go:embed static
+var staticFS embed.FS
 
 type Server struct {
 	cfg          *Config

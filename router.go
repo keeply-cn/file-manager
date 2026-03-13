@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strings"
 )
 
 func (s *Server) setupRoutes() {
@@ -26,15 +27,47 @@ func (s *Server) setupRoutes() {
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" && r.URL.Path != s.cfg.basePath {
+	data, err := staticFS.ReadFile("static/index.html")
+	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
-	s.handleStatic(w, r)
+	content := strings.Replace(string(data), "{{basePath}}", s.cfg.basePath, -1)
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(content))
 }
 
 func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
-	// TODO: 实现静态文件服务
+	path := strings.TrimPrefix(r.URL.Path, s.cfg.basePath)
+	path = strings.TrimPrefix(path, "/static/")
+	if path == "" {
+		path = "index.html"
+	}
+	
+	data, err := staticFS.ReadFile("static/" + path)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	
+	var contentType string
+	switch {
+	case strings.HasSuffix(path, ".html"):
+		contentType = "text/html"
+	case strings.HasSuffix(path, ".css"):
+		contentType = "text/css"
+	case strings.HasSuffix(path, ".js"):
+		contentType = "application/javascript"
+	case strings.HasSuffix(path, ".png"):
+		contentType = "image/png"
+	case strings.HasSuffix(path, ".jpg"), strings.HasSuffix(path, ".jpeg"):
+		contentType = "image/jpeg"
+	default:
+		contentType = "text/plain"
+	}
+	
+	w.Header().Set("Content-Type", contentType)
+	w.Write(data)
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
