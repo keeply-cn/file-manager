@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文件管理器</title>
     <link rel="stylesheet" href="{{basePath}}/static/css/style.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5/lib/codemirror.min.css">
 </head>
 <body>
     <div id="app">
@@ -99,14 +98,12 @@
 
     <input type="file" id="file-input" multiple style="display: none;">
     
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/lib/codemirror.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/javascript/javascript.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/css/css.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/xml/xml.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/htmlmixed/htmlmixed.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/python/python.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/markdown/markdown.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5/mode/go/go.js"></script>
+    <div id="editor-loader" class="hidden" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:3000;">
+        <div style="background:white;padding:20px 40px;border-radius:8px;">
+            加载编辑器中...
+        </div>
+    </div>
+    
     <script src="{{basePath}}/static/js/app.js"></script>
 </body>
 </html>
